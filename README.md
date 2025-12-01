@@ -111,7 +111,7 @@ All data cleaning, dashboards, R scripts, and interpretations were done collabor
 - Interested in analytics, forecasting, data visualization, and supply chain optimization  
 
 **GitHub:** https://github.com/andresca23  
-**LinkedIn:** https://www.linkedin.com/in/andrescadena  
+**LinkedIn:** www.linkedin.com/in/andres-cadena-a63501255
 
 ---
 
