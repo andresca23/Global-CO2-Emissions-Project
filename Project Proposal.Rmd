@@ -1,0 +1,129 @@
+---
+title: "Project Proposal"
+output: html_document
+date: "2025-09-26"
+---
+
+```{r}
+library(readxl)
+library(here)
+library(tidyverse)
+
+```
+
+# **Energy Consumption Dataset by Our World in Data**
+
+[Energy Consumption Dataset by Our World in Data](https://www.kaggle.com/datasets/whisperingkahuna/energy-consumption-dataset-by-our-world-in-data?resource=download)
+
+This dataset is a comprehensive collection of key metrics related to energy consumption and energy mix, maintained by [**Our World in Data**](https://ourworldindata.org/). It includes global, regional, and country-level data on primary energy consumption, energy mix, electricity mix, fossil fuel production, and related energy metrics.
+
+Energy_consumption
+
+```{r}
+Energy_consumption <- read_csv(here("Data", "Energy Consumption Dataset by Our World in Data/energy-data-master/owid-energy-data.csv"))
+Energy_consumption
+
+
+colnames(Energy_consumption)
+
+#getwd()
+```
+
+## Global Energy Mix & Generation Sources (1985-2023)
+
+**may be useful for dashboard building**
+
+[Global Energy Mix & Generation Sources (1985-2023)](https://www.kaggle.com/datasets/shreyasur965/hgfgfdgdsa)
+
+This dataset provides comprehensive information on global electricity generation patterns from 1985 to 2023, covering various energy sources including renewables, nuclear, and fossil fuels. The data, compiled from Ember and the Energy Institute, offers researchers and analysts detailed insights into the evolution of global energy production and the transition towards sustainable sources.
+
+```{r}
+global_energy <- read_csv(here("Data", "Global Energy Mix & Generation Sources (1985-2023)/electricity-prod-source-stacked.csv"))
+colnames(global_energy)
+global_energy
+```
+
+## Fossil Fuels Distribution Across Countries
+
+[Fossil Fuels Distribution across countries](https://www.kaggle.com/datasets/sandhyakrishnan02/fossil-fuels-distribution-across-countries)
+
+Variable time span 1980 – 2021, Year is available at last column of the dataset.
+
+Data published by US Energy Information Analysis (EIA)\
+Link <https://www.eia.gov/international/data/world>\
+Data Credit: <https://ourworldindata.org/>
+
+```{r}
+fossil_fuels_countries <- read_csv(here("Data", "Fossil Fuels Distribution across countries/natural-resources.csv"))
+fossil_fuels_countries 
+colnames(fossil_fuels_countries)
+```
+
+## Emissions by Country
+
+This dataset provides an in-depth look into the global CO2 emissions at the country-level, allowing for a better understanding of how much each country contributes to the global cumulative human impact on climate. It contains information on total emissions as well as from coal, oil, gas, cement production and flaring, and other sources. The data also provides a breakdown of per capita CO2 emission per country - showing which countries are leading in pollution levels and identifying potential areas where reduction efforts should be concentrated. This dataset is essential for anyone who wants to get informed about their own environmental footprint or conduct research on international development trends
+
+Quantifying Sources and Emission Levels
+
+CO2
+
+```{r}
+emissions_by_country <- read_csv(here("Data","Emissions by Country/GCB2022v27_MtCO2_flat.csv"))
+emissions_by_country
+colnames(emissions_by_country)
+```
+
+Per capita
+
+```{r}
+emissions_country_percap <-read_csv(here("Data","Emissions by Country/GCB2022v27_percapita_flat.csv"))
+emissions_country_percap
+```
+
+Sources
+
+```{r}
+emissions_country_sources <- read_csv(here("Data", "Emissions by Country/GCB2022v27_sources_flat.csv"))
+emissions_country_sources
+colnames(emissions_country_sources)
+```
+
+## CO₂ emissions - Our World in Data
+
+his page is just one in our collection of work on [CO~2~](https://ourworldindata.org/co2-and-greenhouse-gas-emissions) [and Greenhouse Gas Emissions](https://ourworldindata.org/co2-and-greenhouse-gas-emissions) where you can explore emissions of other greenhouse gases; where our emissions come from; what trajectories of future emissions look like; and what is driving emissions across the world.
+
+You can also [**download**](https://github.com/owid/co2-data) our complete *Our World in Data* CO~2~ and Greenhouse Gas Emissions database
+
+```{r}
+co_emissions <- read_csv(here("Data", "CO2 emissions - Our World in Data.csv"))
+co_emissions
+colnames(co_emissions)
+```
+
+## Fossil fuels - Our World in Data
+
+[**\*\*may not be needed**\*\*]{.underline}
+
+Fossil fuel consumption has increased significantly over the past half-century, around eight-fold since 1950 and roughly doubling since 1980.
+
+But the types of fuel we rely on have also shifted from solely coal towards a combination with oil and gas. Today, coal consumption is falling in many parts of the world. But oil and gas are still growing quickly.
+
+```{r}
+global_fossil_fuel_consumption <- read_csv(here("Data", "global-fossil-fuel-consumption/global-fossil-fuel-consumption.csv"))
+
+global_fossil_fuel_consumption
+
+colnames(global_fossil_fuel_consumption)
+```
+
+## Worldwide fuel production and
+
+consumption EDA
+
+Unable to download at the moment (not sure how to pull up data set)
+
+/kaggle/input/worldwide-fuel-production-and-consumption/Fuel production vs consumption.csv
+
+```{r}
+eda <- read_csv(here("data", "/kaggle/input/worldwide-fuel-production-and-consumption/Fuel production vs consumption.csv"))
+```

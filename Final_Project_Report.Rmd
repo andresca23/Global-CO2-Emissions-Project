@@ -1,0 +1,311 @@
+---
+title: "Project Proposal"
+output: html_document
+date: "2025-09-26"
+---
+
+# Global Fossil Fuel Dependence
+
+Today’s climate crisis is primarily due to fossil fuel emissions. This creates the question of what fossil fuel dependence may look like in different nations and what fuels are the most common
+
+### Loading Libraries
+
+```{r}
+library(readxl)
+library(here)
+library(tidyverse)
+library(ggplot2)
+library(ggthemes)
+library(scales)
+install.packages("ggbreak")
+library(ggbreak)
+```
+
+### **Loading Data**
+
+```{r}
+#Energy Consumption Dataset by Our World in Data
+Energy_consumption <- read_csv(here("Data", "Energy Consumption Dataset by Our World in Data/energy-data-master/owid-energy-data.csv"))
+#Fossil Fuels Distribution Across Countries
+fossil_fuels_countries <- read_csv(here("Data", "Fossil Fuels Distribution across countries/natural-resources.csv"))
+#Emissions by Country CO2
+emissions_by_country <- read_csv(here("Data","Emissions by Country/GCB2022v27_MtCO2_flat.csv"))
+#Emissions by Country percap
+emissions_country_percap <-read_csv(here("Data","Emissions by Country/GCB2022v27_percapita_flat.csv"))
+#Emissions by Country sources
+emissions_country_sources <- read_csv(here("Data", "Emissions by Country/GCB2022v27_sources_flat.csv"))
+#CO₂ emissions - Our World in Data
+co_emissions <- read_csv(here("Data", "CO2 emissions - Our World in Data.csv"))
+#Fossil fuels - Our World in Data
+global_fossil_fuel_consumption <- read_csv(here("Data", "global-fossil-fuel-consumption/global-fossil-fuel-consumption.csv"))
+```
+
+## Net Importer v. Net Exporter
+
+Bar Chart for Individual Fossil Fuels w/net line
+
+```{r}
+#data used fossil_fuels_countries
+countries <- c("China", "United States", "India", "Russia", "Japan", "Iran", "Saudi Arabia", "Germany", "Canada") 
+
+#Filter
+fossil_subset <- fossil_fuels_countries %>%
+  filter(Entity %in% countries)
+
+#average over years
+fossil_long <- fossil_subset %>%
+  select(Entity, Year, 
+         `Gas net imports`, `Coal net imports`, `Oil net imports`) %>%
+  pivot_longer(
+    cols = c(`Gas net imports`, `Coal net imports`, `Oil net imports`),
+    names_to = "Fuel_Type",
+    values_to = "Net_Imports"
+  ) %>%
+  group_by(Entity, Fuel_Type) %>%
+  summarize(Avg_Net_Imports = mean(Net_Imports, na.rm = TRUE), .groups = "drop") %>%
+  mutate(
+    Avg_Net_Imports = as.numeric(replace_na(Avg_Net_Imports, 0)),
+    Import_Status = ifelse(Avg_Net_Imports >= 0, "Importer", "Exporter"))
+
+# plot
+plot_fuel <- function(fuel_name, title_fuel) {
+  ggplot(
+    filter(fossil_long, Fuel_Type == fuel_name),
+    aes(x = reorder(Entity, Avg_Net_Imports),
+        y = Avg_Net_Imports,
+        fill = Import_Status)) +
+    geom_bar(stat = "identity") +
+    coord_flip() +
+    geom_hline(yintercept = 0, color = "black") +
+    scale_y_continuous(labels = comma) +
+    scale_fill_manual(values = c(
+      "Importer" = "#1f78b4",
+      "Exporter" = "#e31a1c")) +
+    labs(
+      title = paste0("Average Net ", title_fuel, " Trade"),
+      x = "Country",
+      y = "(-) Exporter, (+) Importer") +
+    theme_tufte(base_size = 13) +
+    theme(legend.position = "none")}
+
+# Seperate plots
+plot_fuel("Gas net imports", "Gas")
+plot_fuel("Coal net imports", "Coal")
+plot_fuel("Oil net imports", "Oil")
+```
+
+Proportion for 3 major fossil fuel types
+
+```{r}
+fossil_long <- fossil_long %>%
+  group_by(Fuel_Type) %>%
+  mutate(
+    Prop_Imports = Avg_Net_Imports / max(abs(Avg_Net_Imports), na.rm = TRUE),
+    Entity_ordered = factor(Entity, levels = Entity[order(Prop_Imports)])
+  ) %>%
+  ungroup()
+
+ggplot(
+  fossil_long,
+  aes(x = Entity_ordered,
+      y = Prop_Imports,
+      fill = Import_Status)) +
+  geom_bar(stat = "identity") +
+  coord_flip() +
+  facet_wrap(
+    ~ Fuel_Type,
+    scales = "free_y",
+    labeller = labeller(Fuel_Type = facet_names)
+  ) +
+  geom_hline(yintercept = 0, color = "black") +
+  scale_y_continuous(
+    labels = scales::label_percent(accuracy = 1)
+  ) +
+  scale_fill_manual(values = c(
+    "Importer" = "#1f78b4",
+    "Exporter" = "#e31a1c"
+  )) +
+  labs(
+    title = "Proportional Net Fossil Fuel Trade",
+    x = "Country",
+    y = "Relative Net Exports (-100%), Imports (+100%)"
+  ) +
+  theme_tufte(base_size = 13) +
+  theme(
+    legend.position = "none",
+    strip.text = element_text(size = 12, face = "bold")
+  )
+#ggsave("Propotional_Net_Fossil_Fuel_Trade.png", width = 10, height = 6, dpi = 300)
+
+
+```
+
+## Consumption v. Production
+
+Consumption
+
+```{r}
+#Consumption
+Consumption_data <- Energy_consumption %>%
+filter(country %in% 
+         c("China", "United States", "India", "Russia", "Japan", "Iran", 	"Saudi Arabia", "Germany", "Canada"),
+       year >= 2000, year <= 2020) %>% 
+  group_by(country) %>% 
+  summarise(
+    total_consumption = sum(fossil_fuel_consumption, 
+                            na.rm = TRUE), 	.groups = "drop") 
+ggplot(data = Consumption_data, 
+       mapping = 
+         aes(x = reorder(country, -total_consumption), 
+                     y = total_consumption)) + 
+  geom_col(fill = "#e31a1c") + 
+  labs(
+    title = "Fossil Fuels Consumed 2000 - 2020", 
+    x = "Country", 
+    y = "Oil Consumed") + 
+  theme_tufte()
+#ggsave("Oil_consumption.png", width = 10, height = 6, dpi = 300)
+```
+
+```{r}
+##Production
+production_data <- Energy_consumption %>% 
+filter(country %in% 
+         c("China", "United States", "India", "Russia", "Japan", "Iran", 	"Saudi Arabia", "Germany", "Canada"),
+       year >= 2000, year<=2020) %>% 
+  group_by(country) %>% 
+  summarize(
+    total_production = sum(oil_production, na.rm = 	TRUE),
+    .groups = "drop")
+  
+ggplot(data = production_data, 
+  mapping = aes(x =reorder(country, -total_production),
+                y = total_production, fill = country)) + geom_col(fill = "#1f78b4") + 
+  labs(
+    title = "Oil Produced from 2000 to 2020",
+    x ="Country", 
+    y = "Oil Production (TWh)") + 
+  theme_tufte()
+
+
+```
+
+Combined Consumption & Production
+
+```{r}
+combined <- Energy_consumption %>%
+  filter(
+    country %in% c("China", "United States", "India", "Russia", "Japan", "Iran", "Saudi Arabia", "Germany", "Canada"),
+    year >= 2000, 
+    year <= 2020
+  ) %>%
+  group_by(country) %>%
+  summarise(
+    total_consumption = sum(fossil_fuel_consumption, na.rm = TRUE),
+    total_production  = sum(oil_production, na.rm = TRUE),
+    .groups = "drop") %>%
+  tidyr::pivot_longer(
+    cols = c(total_consumption, total_production),
+    names_to = "type",
+    values_to = "value") %>%
+  mutate(
+    type = recode(type,
+                  "total_consumption" = "Consumption",
+                  "total_production"  = "Production"),
+    type = factor(type, levels = c("Consumption", "Production"))) %>%
+  group_by(country) %>%
+  mutate(order_value = value[type == "Consumption"]) %>%
+  ungroup()
+
+# define dodge position with reverse = TRUE
+pd <- position_dodge2(width = 0.8, reverse = TRUE)
+
+ggplot(combined,
+       aes(x = reorder(country, order_value),
+           y = value,
+           fill = type)) +
+  geom_col(position = pd) +
+  coord_flip() +
+  scale_fill_manual(values = c(
+    "Consumption" = "#e31a1c",
+    "Production"  = "#1f78b4")) +
+  labs(
+    title = "Global Oil Consumption vs. Production (2000–2020)",
+    x = "Country",
+    y = "Total (TWh)") +
+  theme_tufte(base_size = 13) +
+  theme(
+    legend.position = "none",
+    axis.text.y = element_text(size = 10, face= "bold"),
+    axis.title.y = element_text(face = "bold"),
+    plot.title = element_text(face = "bold"))
+#ggsave("Oil_CvP.png", width = 10, height = 6, dpi = 300)
+```
+
+## Consumption v. Population
+
+```{r}
+Energy_consumption <- Energy_consumption %>%
+  mutate(
+    across(c(population, coal_consumption, oil_consumption, gas_consumption),as.numeric))
+
+top_consumers <- c("United States", "China", "India", "Russia", "Japan","Canada", "Germany", "Saudi Arabia", "Iran")
+
+cons_pop <- Energy_consumption %>%
+ filter(
+   country %in% top_consumers,
+   year >= 2000, 
+   year <= 2020, !is.na(population) ) %>% 
+  mutate(
+    total_fossil_cons = coal_consumption +
+      oil_consumption + gas_consumption, 
+    cons_per_capita = 
+      total_fossil_cons / population ) %>% 
+  filter(!is.na(cons_per_capita))
+
+ggplot(cons_pop, 
+       aes(x = year, y = cons_per_capita)) + 
+  geom_line(color = "darkred", size = 1) + 
+  facet_wrap(~ country, scales = "free_y") + 
+  labs( 
+    title = "Per–Capita Fossil Fuel Consumption (Top Global Consumers)", 
+    subtitle = "Shows how fossil fuel intensity per person changes over time (2000–2020)", 
+    x = "Year",
+    y = "Fossil fuel consumption per person" ) +
+  theme_tufte() + 
+  theme(
+    plot.title = element_text(face = "bold"),
+    strip.text = element_text(face = "bold", size = 11),
+    axis.text = element_text(size = 8) )
+ggsave("Per-Capita_consumption.png", width = 10, height = 6, dpi = 300)
+
+```
+
+Codes used for Data Identification
+
+```{r}
+#unique(fossil_fuels_countries$Entity)
+#unique(fossil_fuels_countries$Year)
+#colnames(fossil_fuels_countries)
+
+```
+
+## References
+
+-   Booroom. (2022, June 9). Worldwide fuel production and consumption EDA. Kaggle. <https://www.kaggle.com/code/booroom/worldwide-fuel-production-and-consumption-eda/notebook>
+
+-   Emissions by country. (2024, March 10). Kaggle. <https://www.kaggle.com/datasets/thedevastator/global-fossil-co2-emissions-by-country-2002-2022/data>
+
+-   *Energy consumption dataset by our world in data*. (2024, October 18). Kaggle. <https://www.kaggle.com/datasets/whisperingkahuna/energy-consumption-dataset-by-our-world-in-data?resource>
+
+-   *Fossil Fuels Distribution across countries*. (2022, April 3). Kaggle. <https://www.kaggle.com/datasets/sandhyakrishnan02/fossil-fuels-distribution-across-countries>
+
+-   Grolemund, H. W. M. Ç. a. G. (n.d.-d). *25 Functions – R for Data Science (2E)*. <https://r4ds.hadley.nz/functions>
+
+-   Pedersen, H. W. D. N. a. T. L. (n.d.). *2  First steps – ggplot2: Elegant Graphics for Data Analysis (3e)*. <https://ggplot2-book.org/getting-started.html#sec-aesthetics>
+
+-   *R: Function Definition*. (n.d.). <https://stat.ethz.ch/R-manual/R-devel/library/base/html/function.html>
+
+-   Ritchie, H., & Rosado, P. (2017, October 2). *Fossil fuels*. Our World in Data. <https://ourworldindata.org/fossil-fuels>
+
+-   Ritchie, H., Rosado, P., & Roser, M. (2023, December 5). *CO₂ and Greenhouse Gas Emissions*. Our World in Data. <https://ourworldindata.org/co2-and-greenhouse-gas-emissions>
